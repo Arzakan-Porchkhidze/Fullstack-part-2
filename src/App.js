@@ -1,57 +1,67 @@
-import React, { useState } from 'react'
-import AddName from './components/AddName'
-import Persons from './components/persons'
-import Search from './components/Search'
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import Note from './components/Note'
 
-const App = () => {
-    const [persons, setPersons] = useState([
-        { name: 'Arto Hellas', number: '040-123456' },
-        { name: 'Ada Lovelace', number: '39-44-5323523' },
-        { name: 'Dan Abramov', number: '12-43-234345' },
-        { name: 'Mary Poppendieck', number: '39-23-6423122' }
-    ]) 
-  const [ newName, setNewName ] = useState('')
-  const [ newNumber, setNewNumber] = useState('')
-  const [ search, setSearch] = useState('')
-  
-  const handleChange = (e) =>{
-        setNewName(e.target.value) 
+const App = (props) => {
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState('') 
+  const [showAll, setShowAll] = useState(true)
+  useEffect(() => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/notes')
+      .then(response => {
+        console.log('promise fulfilled')
+        setNotes(response.data)
+      })
+  }, [])
+  console.log('render', notes.length, 'notes')
+
+
+  const addNote = (event) => {
+    event.preventDefault()
+    const noteObject = {
+      content: newNote,
+      date: new Date().toISOString(),
+      important: Math.random() > 0.5,
+      id: notes.length + 1,
     }
-  const handleNumChange = (e) =>{
-    setNewNumber(e.target.value) 
-    }
-  const addName = (e) =>{
-        e.preventDefault()
-        const newperson = {
-            name: newName,
-            number: newNumber
-        }
-        if(persons.some(item => item.name === newperson.name)){
-            alert(`${newName} is already added to phonebook`)
-            return
-        }
-        setPersons(persons.concat(newperson))
-        setNewName('')
-        setNewNumber('')
-  }
-  const filteredSearch = persons.filter(contact => contact.name.toLowerCase().includes(search.toLowerCase()));
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value)
-  }
   
+    setNotes(notes.concat(noteObject))
+    setNewNote('')
+  }
+
+  const handleNoteChange = (event) => {
+    console.log(event.target.value)
+    setNewNote(event.target.value)
+  }
+
+  const notesToShow = showAll
+    ? notes
+    : notes.filter(note => note.important)
+
   return (
     <div>
-        <Search search={search} handleSearchChange={handleSearchChange}/>
-      <h2>Phonebook</h2>
-        <AddName addName={addName}
-        newName={newName}
-        newNumber={newNumber}
-        handleChange={handleChange}
-        handleNumChange={handleNumChange}/>
-      <h2>Numbers</h2>
-        <Persons filteredSearch={filteredSearch}/>
+      <h1>Notes</h1>
+      <div>
+        <button onClick={() => setShowAll(!showAll)}>
+          show {showAll ? 'important' : 'all' }
+        </button>
+      </div>      
+      <ul>
+        {notesToShow.map((note, i) => 
+          <Note key={i} note={note} />
+        )}
+      </ul>
+      <form onSubmit={addNote}>
+        <input
+          value={newNote}
+          onChange={handleNoteChange}
+        />
+        <button type="submit">save</button>
+      </form>   
     </div>
   )
 }
 
-export default App
+export default App 
